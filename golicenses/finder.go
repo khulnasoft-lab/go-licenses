@@ -30,8 +30,9 @@ func NewLicenseFinder(paths, gitRemotes []string, threshold float64) LicenseFind
 	}
 }
 
-// licenseDBArchiveFetcher fetches the embedded license database archive.
-func licenseDBArchiveFetcher() ([]byte, error) {
+// GetLicenseDBArchiveFetcher fetches the embedded license database archive.
+// It's made public to be used by other commands like 'tree'.
+func GetLicenseDBArchiveFetcher() ([]byte, error) {
 	f, err := pkger.Open("/assets/licenses.db")
 	if err != nil {
 		return nil, fmt.Errorf("unable to open license.db: %w", err)
@@ -48,7 +49,7 @@ func (r LicenseFinder) Find() (<-chan LicenseResult, error) {
 	flag.Parse()
 	_ = flag.Lookup("logtostderr").Value.Set("false")
 
-	dbFetcherOpt := licenseclassifier.ArchiveFunc(licenseDBArchiveFetcher)
+	dbFetcherOpt := licenseclassifier.ArchiveFunc(GetLicenseDBArchiveFetcher)
 	classifier, err := licenses.NewClassifier(r.ConfidenceThreshold, dbFetcherOpt)
 	if err != nil {
 		return nil, err

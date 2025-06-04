@@ -44,9 +44,9 @@ func (p *Presenter) Present(w io.Writer) error {
 			downloadLocation = "NOASSERTION"
 		} else if downloadLocation != "NOASSERTION" {
 			// Prepend "git+" only for likely VCS URLs
-			isVCS := strings.Contains(downloadLocation, "github.com") || 
-				strings.Contains(downloadLocation, "gitlab.com") || 
-				strings.Contains(downloadLocation, "bitbucket.org") || 
+			isVCS := strings.Contains(downloadLocation, "github.com") ||
+				strings.Contains(downloadLocation, "gitlab.com") ||
+				strings.Contains(downloadLocation, "bitbucket.org") ||
 				strings.HasSuffix(downloadLocation, ".git")
 
 			if isVCS && !strings.HasPrefix(downloadLocation, "git+") {
@@ -115,7 +115,7 @@ func isValidSPDXLicenseID(id string) bool {
 		if strings.HasSuffix(lowerID, "+") {
 			baseLicense := strings.TrimSuffix(lowerID, "+") + "-or-later"
 			// Recursive call, but on a transformed string, so it should terminate.
-			return isValidSPDXLicenseID(baseLicense) 
+			return isValidSPDXLicenseID(baseLicense)
 		}
 		return false
 	}

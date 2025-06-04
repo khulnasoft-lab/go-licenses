@@ -32,7 +32,7 @@ func TestSPDXPresenter_Present(t *testing.T) {
 		results <- golicenses.LicenseResult{
 			Library: "my-custom-lib@v1.2.3",
 			URL:     "https://example.com/my-custom-lib", // Non-VCS URL
-			License: "BSD-3-Clause-Invalid", // To test NOASSERTION
+			License: "BSD-3-Clause-Invalid",              // To test NOASSERTION
 			Path:    "/path/to/custom",
 		}
 	}()
