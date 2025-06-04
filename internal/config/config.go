@@ -21,6 +21,9 @@ type Application struct {
 	Forbid       StringArray `mapstructure:"forbid,deny"`
 	Permit       StringArray `mapstructure:"permit,allow"`
 	IgnorePkg    StringArray `mapstructure:"ignore-packages"`
+	// For CLI compatibility
+	Format       string `mapstructure:"format"`
+	TemplateFile string `mapstructure:"template-file"`
 }
 
 type StringArray []string

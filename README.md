@@ -31,6 +31,20 @@ golicenses check ~/some/path
 golicenses check github.com/some/repo
 ```
 
+Both `list` and `check` commands support a `--format` flag to specify the output format. Supported formats are:
+- `csv` (default for `list`)
+- `json`
+- `text` (default for `check`)
+- `markdown`
+- `html`
+- `spdx` (outputs in SPDX tag-value format)
+- `template` (requires `--template-file` to specify a Go template)
+
+For example, to output in SPDX format:
+```bash
+golicenses list --format spdx
+```
+
 The `.golicenses.yaml` can specify a simple allow-list or deny-list license name regex patterns (by SPDX name):
 
 ```bash

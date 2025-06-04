@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// TestRules_Evaluate tests the Rules evaluation logic with various allow/deny patterns and edge cases.
 func TestRules_Evaluate(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -138,5 +139,70 @@ func TestRules_Evaluate(t *testing.T) {
 				}
 			}
 		})
+		// Additional edge cases
+		edgeCases := []struct {
+			name     string
+			act      Action
+			patterns []string
+			against  []LicenseResult
+			ignore   []string
+			expected bool
+		}{
+			{
+				name:     "empty patterns allow",
+				act:      AllowAction,
+				patterns: []string{},
+				against:  []LicenseResult{{Library: "lib1", License: "MIT-0"}},
+				expected: false,
+			},
+			{
+				name:     "empty patterns deny",
+				act:      DenyAction,
+				patterns: []string{},
+				against:  []LicenseResult{{Library: "lib1", License: "MIT-0"}},
+				expected: true,
+			},
+			{
+				name:     "empty input",
+				act:      AllowAction,
+				patterns: []string{"MIT.*"},
+				against:  []LicenseResult{},
+				expected: true,
+			},
+			{
+				name:     "deny all",
+				act:      DenyAction,
+				patterns: []string{".*"},
+				against:  []LicenseResult{{Library: "lib1", License: "MIT-0"}},
+				expected: false,
+			},
+			{
+				name:     "allow all",
+				act:      AllowAction,
+				patterns: []string{".*"},
+				against:  []LicenseResult{{Library: "lib1", License: "MIT-0"}},
+				expected: true,
+			},
+			{
+				name:     "ignore all",
+				act:      AllowAction,
+				patterns: []string{"MIT.*"},
+				against:  []LicenseResult{{Library: "lib1", License: "BSD"}},
+				ignore:   []string{"lib1"},
+				expected: true,
+			},
+		}
+		for _, ec := range edgeCases {
+			t.Run(ec.name, func(t *testing.T) {
+				r, err := NewRules(ec.act, ec.patterns, ec.ignore...)
+				if err != nil {
+					t.Fatalf("failed to make rules: %+v", err)
+				}
+				actual, _, err := r.Evaluate(ec.against...)
+				if actual != ec.expected {
+					t.Errorf("bad evaluation for %s: got %v, want %v", ec.name, actual, ec.expected)
+				}
+			})
+		}
 	}
 }

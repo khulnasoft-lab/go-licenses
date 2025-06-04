@@ -6,6 +6,7 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/khulnasoft/go-licenses/golicenses"
+	"github.com/khulnasoft/go-licenses/golicenses/presenter"
 
 	"github.com/spf13/cobra"
 )
@@ -17,29 +18,42 @@ var checkCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := doCheckCmd(cmd, args)
 		if err != nil {
-			color.Style{color.Red, color.Bold}.Println(err.Error())
+			fmt.Fprintln(os.Stderr, color.Style{color.Red, color.Bold}.Sprint(err.Error()))
 			os.Exit(1)
 		}
 		color.Style{color.Green, color.Bold}.Println("Passed!")
 	},
 }
 
+var checkFormatFlag string
+var checkTemplateFileFlag string
+
 func init() {
+	checkCmd.Flags().StringVar(&checkFormatFlag, "format", "text", "Output format: text, csv, json, markdown, html, spdx, template")
+	checkCmd.Flags().StringVar(&checkTemplateFileFlag, "template-file", "", "Path to Go template file (used only if --format=template)")
 	rootCmd.AddCommand(checkCmd)
 }
 
 // TODO: add to check the ability to check for 3rd party notices are in the repo
 
-func doCheckCmd(_ *cobra.Command, args []string) error {
-	var rules golicenses.Rules
+// doCheckCmd runs the license check logic for the check command.
+// Now supports --format and --template-file for output customization.
+func doCheckCmd(cmd *cobra.Command, args []string) error {
+	// Assign CLI flags to appConfig fields for presenter selection
+	appConfig.Format = checkFormatFlag
+	appConfig.TemplateFile = checkTemplateFileFlag
+	if appConfig.Format != "" {
+		appConfig.Output = appConfig.Format
+	}
+
 	var err error
 	switch {
 	case len(appConfig.Permit) > 0:
-		rules, err = golicenses.NewRules(golicenses.AllowAction, appConfig.Permit, appConfig.IgnorePkg...)
-		fmt.Printf("Allow Rules: %+v\n", appConfig.Permit)
+		_, err = golicenses.NewRules(golicenses.AllowAction, appConfig.Permit, appConfig.IgnorePkg...)
+		fmt.Fprintf(os.Stderr, "Allow Rules: %+v\n", appConfig.Permit)
 	case len(appConfig.Forbid) > 0:
-		rules, err = golicenses.NewRules(golicenses.DenyAction, appConfig.Forbid, appConfig.IgnorePkg...)
-		fmt.Printf("Deny Rules: %+v\n", appConfig.Forbid)
+		_, err = golicenses.NewRules(golicenses.DenyAction, appConfig.Forbid, appConfig.IgnorePkg...)
+		fmt.Fprintf(os.Stderr, "Deny Rules: %+v\n", appConfig.Forbid)
 	default:
 		return fmt.Errorf("no rules configured")
 	}
@@ -60,22 +74,18 @@ func doCheckCmd(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	failed := false
-	for result := range resultStream {
-		allowable, _, err := rules.Evaluate(result)
-		if err != nil {
-			return err
+	opt := appConfig.PresenterOpt
+	var pres presenter.Presenter
+	if int(opt) == 6 { // TemplatePresenter
+		if appConfig.Output == "" {
+			return fmt.Errorf("--template-file must be provided when --format=template")
 		}
-
-		if !allowable {
-			failed = true
-			fmt.Printf("Unallowable license (%s) from %q\n", result.License, result.Library)
-		}
+		pres = presenter.GetPresenter(opt, resultStream, appConfig.Output)
+	} else {
+		pres = presenter.GetPresenter(opt, resultStream)
 	}
-
-	if failed {
-		return fmt.Errorf("failed validation")
+	if pres == nil {
+		return fmt.Errorf("invalid presenter for option: %v", opt)
 	}
-
-	return nil
+	return pres.Present(os.Stdout)
 }

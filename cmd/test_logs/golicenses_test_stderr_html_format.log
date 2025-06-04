@@ -1,0 +1,21 @@
+[DEBUG] initAppConfig: Attempting to load config with path = /Users/mdsulaiman/go-licenses/cmd/testdata/.golicenses.yaml
+[DEBUG] LoadConfigFromFile: Received configPath = /Users/mdsulaiman/go-licenses/cmd/testdata/.golicenses.yaml
+[DEBUG] readConfig: Received configPath = /Users/mdsulaiman/go-licenses/cmd/testdata/.golicenses.yaml
+[DEBUG] readConfig: Successfully read explicit configPath: /Users/mdsulaiman/go-licenses/cmd/testdata/.golicenses.yaml
+[DEBUG] LoadConfigFromFile: Viper AllSettings before Unmarshal: map[allow:[ANY]]
+[DEBUG] LoadConfigFromFile: After Unmarshal: Permit=[], Forbid=[], ConfigFileUsed=/Users/mdsulaiman/go-licenses/cmd/testdata/.golicenses.yaml
+[DEBUG] initAppConfig: appConfig after load: Permit=[], Forbid=[], ConfigFileUsed=/Users/mdsulaiman/go-licenses/cmd/testdata/.golicenses.yaml
+Error: no rules configured
+Usage:
+  golicenses check [flags]
+
+Flags:
+      --format string          Output format: text, csv, json, markdown, html, template (default "text")
+  -h, --help                   help for check
+      --template-file string   Path to Go template file (used only if --format=template)
+
+Global Flags:
+  -c, --config string   application config file
+  -o, --output string   report output formatter, options=[csv json text markdown html] (default "text")
+  -v, --verbose count   increase verbosity (-v = info, -vv = debug)
+
