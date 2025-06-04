@@ -5,8 +5,8 @@ go 1.18
 require (
 	github.com/adrg/xdg v0.2.1
 	github.com/go-test/deep v1.0.6
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/google/go-cmp v0.5.6
+	github.com/golang/glog v1.2.4
+	github.com/google/go-cmp v0.6.0
 	github.com/google/licenseclassifier v0.0.0-20200402202327-879cb1424de0
 	github.com/gookit/color v1.2.5
 	github.com/hashicorp/go-multierror v1.1.0
@@ -46,7 +46,6 @@ require (
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2 // indirect
