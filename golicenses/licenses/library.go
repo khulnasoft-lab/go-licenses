@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
+	"github.com/google/licenseclassifier" // Added this import
 	"golang.org/x/tools/go/packages"
 )
 
@@ -202,4 +203,89 @@ func isStdLib(pkg *packages.Package) bool {
 		return false
 	}
 	return strings.HasPrefix(pkg.GoFiles[0], build.Default.GOROOT)
+}
+
+// DependencyNode represents a node in the dependency tree.
+type DependencyNode struct {
+	Path         string            `json:"path"`
+	License      string            `json:"license,omitempty"` // Optional: We can populate this later if needed for tree view
+	LicensePath  string            `json:"licensePath,omitempty"`
+	Dependencies []*DependencyNode `json:"dependencies,omitempty"`
+}
+
+// BuildDependencyTree constructs a dependency tree for the given import paths.
+// It returns the root nodes of the dependency trees (for each importPath provided).
+func BuildDependencyTree(ctx context.Context, confidenceThreshold float64, dbOption licenseclassifier.OptionFunc, importPaths ...string) ([]*DependencyNode, error) {
+	classifier, err := NewClassifier(confidenceThreshold, dbOption)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create classifier for BuildDependencyTree: %w", err)
+	}
+
+	cfg := &packages.Config{
+		Context: ctx,
+		Mode:    packages.NeedImports | packages.NeedDeps | packages.NeedFiles | packages.NeedName,
+	}
+
+	rootPkgs, err := packages.Load(cfg, importPaths...)
+	if err != nil {
+		return nil, err
+	}
+
+	if packages.PrintErrors(rootPkgs) > 0 {
+		return nil, PackagesError{pkgs: rootPkgs} // Assuming PackagesError is suitable
+	}
+
+	// visited keeps track of processed packages to avoid cycles and redundant work.
+	visited := make(map[string]*DependencyNode)
+	var resultRoots []*DependencyNode
+
+	var buildNode func(pkg *packages.Package) *DependencyNode
+	buildNode = func(pkg *packages.Package) *DependencyNode {
+		if node, ok := visited[pkg.PkgPath]; ok {
+			return node // Already processed or currently processing (cycle)
+		}
+
+		if isStdLib(pkg) {
+			return nil // Skip standard library packages
+		}
+
+		node := &DependencyNode{Path: pkg.PkgPath}
+		visited[pkg.PkgPath] = node // Mark as visited early to handle cycles
+
+		// Attempt to find license for this package node (optional for basic tree)
+		var pkgDir string
+		switch {
+		case len(pkg.GoFiles) > 0:
+			pkgDir = filepath.Dir(pkg.GoFiles[0])
+		case len(pkg.CompiledGoFiles) > 0:
+			pkgDir = filepath.Dir(pkg.CompiledGoFiles[0])
+		case len(pkg.OtherFiles) > 0:
+			pkgDir = filepath.Dir(pkg.OtherFiles[0])
+		}
+		if pkgDir != "" {
+			licensePath, findLicErr := Find(pkgDir, classifier) // Find still needs a classifier instance
+			if findLicErr == nil && licensePath != "" {
+				node.LicensePath = licensePath
+				licenseName, _, identifyErr := classifier.Identify(licensePath)
+				if identifyErr == nil {
+					node.License = licenseName
+				}
+			}
+		}
+
+		for _, impPkg := range pkg.Imports {
+			if depNode := buildNode(impPkg); depNode != nil {
+				node.Dependencies = append(node.Dependencies, depNode)
+			}
+		}
+		return node
+	}
+
+	for _, rootPkg := range rootPkgs {
+		if rootNode := buildNode(rootPkg); rootNode != nil {
+			resultRoots = append(resultRoots, rootNode)
+		}
+	}
+
+	return resultRoots, nil
 }

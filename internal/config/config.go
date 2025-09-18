@@ -5,6 +5,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/khulnasoft/go-licenses/golicenses"
 	"github.com/khulnasoft/go-licenses/golicenses/presenter"
 	"github.com/khulnasoft/go-licenses/internal"
 
@@ -21,6 +22,12 @@ type Application struct {
 	Forbid       StringArray `mapstructure:"forbid,deny"`
 	Permit       StringArray `mapstructure:"permit,allow"`
 	IgnorePkg    StringArray `mapstructure:"ignore-packages"`
+	// For CLI compatibility
+	Format              string  `mapstructure:"format"`
+	TemplateFile        string  `mapstructure:"template-file"`
+	Strict              bool    `mapstructure:"strict"`
+	Summary             bool    `mapstructure:"summary"`
+	ConfidenceThreshold float64 `mapstructure:"confidence-threshold"`
 }
 
 type StringArray []string
@@ -84,6 +91,26 @@ func (cfg *Application) Build() error {
 	}
 	cfg.PresenterOpt = presenterOption
 
+	return nil
+}
+
+// Action returns the license rule action based on Permit/Forbid config.
+func (cfg *Application) Action() golicenses.Action {
+	if len(cfg.Permit) > 0 {
+		return golicenses.AllowAction
+	} else if len(cfg.Forbid) > 0 {
+		return golicenses.DenyAction
+	}
+	return golicenses.UnknownAction
+}
+
+// Patterns returns the license patterns based on Permit/Forbid config.
+func (cfg *Application) Patterns() []string {
+	if len(cfg.Permit) > 0 {
+		return cfg.Permit
+	} else if len(cfg.Forbid) > 0 {
+		return cfg.Forbid
+	}
 	return nil
 }
 

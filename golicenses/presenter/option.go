@@ -7,6 +7,10 @@ const (
 	CSVPresenter
 	JSONPresenter
 	TextPresenter
+	MarkdownPresenter
+	HTMLPresenter
+	SPDXPresenter     // Added for SPDX output
+	TemplatePresenter // Added for template-based output
 )
 
 var optionStr = []string{
@@ -14,12 +18,20 @@ var optionStr = []string{
 	"csv",
 	"json",
 	"text",
+	"markdown",
+	"html",
+	"spdx",
+	"template",
 }
 
 var Options = []Option{
 	CSVPresenter,
 	JSONPresenter,
 	TextPresenter,
+	MarkdownPresenter,
+	HTMLPresenter,
+	SPDXPresenter,
+	TemplatePresenter,
 }
 
 type Option int
@@ -32,6 +44,14 @@ func ParseOption(userStr string) Option {
 		return JSONPresenter
 	case strings.ToLower(TextPresenter.String()):
 		return TextPresenter
+	case strings.ToLower(MarkdownPresenter.String()):
+		return MarkdownPresenter
+	case strings.ToLower(HTMLPresenter.String()):
+		return HTMLPresenter
+	case "spdx": // Directly check for "spdx" string
+		return SPDXPresenter
+	case "template": // Directly check for "template" string
+		return TemplatePresenter
 	default:
 		return UnknownPresenter
 	}

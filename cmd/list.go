@@ -24,13 +24,24 @@ var listCmd = &cobra.Command{
 	},
 }
 
+var listFormatFlag string
+var listTemplateFileFlag string
+
 func init() {
 	listCmd.Flags().StringArrayVar(&gitRemotes, "git-remote", []string{"origin", "upstream"}, "Remote Git repositories to try")
-
+	listCmd.Flags().StringVar(&listFormatFlag, "format", "text", "Output format: text, csv, json, markdown, html, spdx, template")
+	listCmd.Flags().StringVar(&listTemplateFileFlag, "template-file", "", "Path to Go template file (used only if --format=template)")
 	rootCmd.AddCommand(listCmd)
 }
 
-func doListCmd(_ *cobra.Command, args []string) error {
+func doListCmd(cmd *cobra.Command, args []string) error {
+	// Assign CLI flags to appConfig fields for presenter selection
+	appConfig.Format = listFormatFlag
+	appConfig.TemplateFile = listTemplateFileFlag
+	if appConfig.Format != "" {
+		appConfig.Output = appConfig.Format
+	}
+
 	var paths []string
 	if len(args) > 0 {
 		paths = args
@@ -44,6 +55,18 @@ func doListCmd(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	pres := presenter.GetPresenter(appConfig.PresenterOpt, resultStream)
+	opt := appConfig.PresenterOpt
+	var pres presenter.Presenter
+	if int(opt) == 6 { // TemplatePresenter
+		if appConfig.Output == "" {
+			return fmt.Errorf("--template-file must be provided when --format=template")
+		}
+		pres = presenter.GetPresenter(opt, resultStream, appConfig.Output)
+	} else {
+		pres = presenter.GetPresenter(opt, resultStream)
+	}
+	if pres == nil {
+		return fmt.Errorf("invalid presenter for option: %v", opt)
+	}
 	return pres.Present(os.Stdout)
 }
